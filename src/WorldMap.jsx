@@ -507,16 +507,38 @@ const WorldMap = () => {
   }, []);
 
   // ---------- load Cliopatria border data ----------
+  // The JSON file is too large for Git (~57 MB), so it lives on GitHub
+  // Releases as a CDN. We try the local /cliopatria_web.json first (works
+  // in dev when the file is in public/), then fall back to the release URL
+  // (works in production / for anyone running this without the local data).
   useEffect(() => {
-    fetch('/cliopatria_web.json')
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(data => {
+    const REMOTE_URL = 'https://github.com/Saownie/religion-variable-dashboard/releases/download/data-v1/cliopatria_web.json';
+    const tryLoad = async () => {
+      try {
+        let res = await fetch('/cliopatria_web.json');
+        if (!res.ok) throw new Error(`local ${res.status}`);
+        const data = await res.json();
         if (data?.regions) {
-          console.log(`[Cliopatria] loaded regions: ${Object.keys(data.regions).join(', ')}`);
+          console.log(`[Cliopatria] loaded from local: ${Object.keys(data.regions).length} regions`);
+          setCliopatriaData(data);
+          return;
+        }
+      } catch (localErr) {
+        console.log('[Cliopatria] local copy unavailable, falling back to GitHub Releases');
+      }
+      try {
+        const res = await fetch(REMOTE_URL);
+        if (!res.ok) throw new Error(`remote ${res.status}`);
+        const data = await res.json();
+        if (data?.regions) {
+          console.log(`[Cliopatria] loaded from release: ${Object.keys(data.regions).length} regions`);
           setCliopatriaData(data);
         }
-      })
-      .catch(err => console.warn('[Cliopatria] border data not available:', err.message));
+      } catch (remoteErr) {
+        console.warn('[Cliopatria] could not load border data:', remoteErr.message);
+      }
+    };
+    tryLoad();
   }, []);
 
   // ---------- modern globe data ----------
