@@ -2,3 +2,4 @@ node_modules
 cliopatria.geojson
 cliopatria.geojson.zip
 ne_110m_admin_0_countries.geojson
+public/cliopatria_web.json
